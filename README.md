@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/banner.png" alt="Secora Banner" width="100%" />
+</p>
+
 # 🛡️ Secora — AI-Powered Web Vulnerability Analyzer
 
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)]()
