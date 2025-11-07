@@ -1,18 +1,30 @@
 // backend/queue/enqueue.js
-import { Queue } from "bullmq";
-import IORedis from "ioredis";
+import { enqueueScanJob } from "./producer.js";
 
-const connection = new IORedis(process.env.REDIS_URL || "redis://127.0.0.1:6379", {
-  maxRetriesPerRequest: null, // ✅ Fix for BullMQ
-});
-
-export const scanQueue = new Queue("scanQueue", { connection });
-
+/**
+ * Wrapper function to enqueue a new scan
+ * @param {string} url - The target URL to scan
+ * @param {object} meta - Optional metadata (userId, priority, etc.)
+ * @returns {Promise<{success: boolean, jobId?: string, error?: any}>}
+ */
 export async function enqueueScan(url, meta = {}) {
-  const job = await scanQueue.add(
-    "scan",
-    { url, ...meta },
-    { attempts: 3, backoff: { type: "exponential", delay: 500 } }
-  );
-  return job;
+  const jobId = meta.scanId || url; // use scanId if present, fallback to URL
+
+  const payload = {
+    url,
+    timestamp: Date.now(),
+    ...meta,
+  };
+
+  console.log(`[Queue] Enqueuing scan for ${url}...`);
+
+  const result = await enqueueScanJob(jobId, payload);
+
+  if (result.success) {
+    console.log(`[Queue] ✅ Scan job queued successfully: ${result.jobId}`);
+  } else {
+    console.error(`[Queue] ❌ Failed to enqueue job:`, result.error);
+  }
+
+  return result;
 }

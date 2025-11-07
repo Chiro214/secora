@@ -1,0 +1,20 @@
+[
+  {
+    "vulnerability": "Missing Content-Security-Policy",
+    "description": "No CSP header found, exposing the site to XSS and data injection attacks.",
+    "remediation": "Add 'Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.example.com;'.",
+    "example_fix": "<meta http-equiv='Content-Security-Policy' content=\"default-src 'self';\">"
+  },
+  {
+    "vulnerability": "Missing HSTS header",
+    "description": "Strict-Transport-Security not set, allowing potential insecure connections.",
+    "remediation": "Add 'Strict-Transport-Security: max-age=63072000; includeSubDomains; preload'.",
+    "example_fix": "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload"
+  },
+  {
+    "vulnerability": "Missing X-Frame-Options",
+    "description": "Page may be embedded in frames, making it vulnerable to clickjacking.",
+    "remediation": "Add 'X-Frame-Options: DENY' to response headers.",
+    "example_fix": "X-Frame-Options: DENY"
+  }
+]
