@@ -10,8 +10,9 @@ import path from "path";
 import { scanTarget } from "./utils/scan.js";
 import aiRemediateRoute from "./routes/aiRemediate.js";
 import reportRoute from "./routes/report.js";
+import summarizeRoute from "./routes/summarize.js"; // ✅ Fixed path
 
-const app = express();
+const app = express(); // ✅ must be before using routes
 
 app.use(cors());
 app.use(express.json());
@@ -29,14 +30,12 @@ app.post("/scan", async (req, res) => {
   try {
     const result = await scanTarget(url);
 
-    // ✅ Define correct directory (no nesting issues)
     const dir = path.resolve("scan-results");
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
       console.log("📁 Created scan-results directory");
     }
 
-    // ✅ Save scan result
     const safeName = encodeURIComponent(url);
     const file = path.join(dir, `${safeName}-${Date.now()}.json`);
     fs.writeFileSync(file, JSON.stringify(result, null, 2));
@@ -49,9 +48,10 @@ app.post("/scan", async (req, res) => {
   }
 });
 
-// 🧩 Attach AI Remediation + PDF report routes
+// 🧩 Attach AI Remediation + PDF report + Summary routes
 app.use(aiRemediateRoute);
 app.use(reportRoute);
+app.use(summarizeRoute); // ✅ should come here
 
 // 🚀 Start backend
 const PORT = process.env.PORT || 5000;
