@@ -1,0 +1,10 @@
+{
+  "total": 6,
+  "severities": {
+    "High": 0,
+    "Medium": 0,
+    "Low": 0
+  },
+  "top3": [],
+  "summary": "Automated summary generation failed."
+}

