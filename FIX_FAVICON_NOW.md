@@ -9,7 +9,7 @@
 
 ### Your Favicon is Now at:
 ```
-frontend/public/secora.ico
+frontend/public/favicon.ico
 ```
 
 ### To See Your SECORA Icon:
@@ -42,8 +42,8 @@ Your SECORA icon will be there! 🎉
 **It's 100% browser cache.** The icon is correctly set up in the code. Your browser is showing you the OLD cached Vercel icon.
 
 ### Proof:
-- ✅ File exists: `frontend/public/secora.ico`
-- ✅ Code is correct: `<link rel="icon" href="/secora.ico" />`
+- ✅ File exists: `frontend/public/favicon.ico`
+- ✅ Code is correct: `<link rel="icon" href="/favicon.ico" />`
 - ✅ Server is running fresh
 - ✅ Cache is cleared
 
