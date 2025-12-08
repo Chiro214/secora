@@ -10,7 +10,8 @@ import path from "path";
 import { scanTarget } from "./utils/scan.js";
 import aiRemediateRoute from "./routes/aiRemediate.js";
 import reportRoute from "./routes/report.js";
-import summarizeRoute from "./routes/summarize.js"; // ✅ Fixed path
+import summarizeRoute from "./routes/summarize.js";
+import authRoute from "./routes/auth.js";
 
 const app = express(); // ✅ must be before using routes
 
@@ -71,10 +72,11 @@ app.get("/api/scan/:scanId", async (req, res) => {
   }
 });
 
-// 🧩 Attach AI Remediation + PDF report + Summary routes
+// 🧩 Attach routes
+app.use(authRoute); // Authentication routes
 app.use(aiRemediateRoute);
 app.use(reportRoute);
-app.use(summarizeRoute); // ✅ should come here
+app.use(summarizeRoute);
 
 // 🚀 Start backend
 const PORT = process.env.PORT || 5000;
