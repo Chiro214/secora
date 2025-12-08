@@ -6,7 +6,5 @@ node_modules/
 dist/
 .vscode/
 *.log
-Dockerfile
-package-lock.json
 frontend/.env
 backend/.env
