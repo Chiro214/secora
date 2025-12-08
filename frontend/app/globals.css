@@ -1,0 +1,352 @@
+@import "tailwindcss";
+
+/* Tailwind v4 Theme Configuration */
+/* stylelint-disable-next-line at-rule-no-unknown */
+@theme {
+  /* Colors */
+  --color-background: #060b16;
+  --color-foreground: #ededed;
+  --color-primary: #5AA7FF;
+  --color-secondary: #9333EA;
+  --color-success: #00FF9D;
+  --color-warning: #FFB800;
+  --color-error: #FF3333;
+  --color-surface: #0a1224;
+  --color-muted-foreground: rgba(232, 240, 255, 0.7);
+}
+
+/* Additional CSS Variables */
+:root {
+  --color-surface-glass: rgba(10, 18, 36, 0.7);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Utilities */
+.glass-panel {
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(90, 167, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.neon-border {
+  box-shadow: 0 0 5px var(--color-primary), inset 0 0 5px var(--color-primary);
+}
+
+.neon-text {
+  text-shadow: 0 0 5px var(--color-primary);
+}
+
+
+
+/* 3D Perspective and Transforms */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Holographic Text Effect */
+.holographic-text {
+  background: linear-gradient(
+    45deg,
+    #4BA3FF 0%,
+    #E8F0FF 25%,
+    #4BA3FF 50%,
+    #9333EA 75%,
+    #4BA3FF 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: holographic-shine 3s linear infinite;
+}
+
+@keyframes holographic-shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* Cyber Grid Animation */
+@keyframes cyber-grid-pulse {
+  0%, 100% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+.cyber-grid {
+  background-image: 
+    linear-gradient(rgba(75, 163, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(75, 163, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: cyber-grid-pulse 4s ease-in-out infinite;
+}
+
+/* Glassmorphism Enhanced */
+.glass-morphic {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Neon Glow Animations */
+@keyframes neon-pulse {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px rgba(75, 163, 255, 0.5),
+      0 0 20px rgba(75, 163, 255, 0.3),
+      0 0 30px rgba(75, 163, 255, 0.2);
+  }
+  50% {
+    text-shadow: 
+      0 0 20px rgba(75, 163, 255, 0.8),
+      0 0 40px rgba(75, 163, 255, 0.5),
+      0 0 60px rgba(75, 163, 255, 0.3);
+  }
+}
+
+.neon-text {
+  animation: neon-pulse 3s ease-in-out infinite;
+}
+
+/* Particle Trail Effect */
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) translateX(50px);
+    opacity: 0;
+  }
+}
+
+/* Scanning Ray Effect */
+@keyframes scanning-ray {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(200%);
+  }
+}
+
+.scanning-ray {
+  animation: scanning-ray 2s linear infinite;
+}
+
+/* 3D Card Hover Effect */
+.card-3d {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-3d:hover {
+  transform: translateY(-10px) rotateX(5deg) rotateY(5deg);
+  box-shadow: 
+    0 20px 60px rgba(75, 163, 255, 0.3),
+    0 0 40px rgba(75, 163, 255, 0.2);
+}
+
+/* Gradient Animation */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 5s ease infinite;
+}
+
+/* Shimmer Effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(75, 163, 255, 0.2) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 3s infinite;
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Cyber Scan Line */
+@keyframes scan-line {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(75, 163, 255, 0.8),
+    transparent
+  );
+  animation: scan-line 3s linear infinite;
+  box-shadow: 0 0 10px rgba(75, 163, 255, 0.5);
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection */
+::selection {
+  background: rgba(75, 163, 255, 0.3);
+  color: #E8F0FF;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #010313;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4BA3FF, #9333EA);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5AA7FF, #A855F7);
+}
+
+
+/* Custom Scrollbar for Dashboard */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00FFFF, #0096FF);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00FFFF, #9333EA);
+}
+
+
+/* Shimmer Animation for Skeletons */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Performance Optimizations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hardware acceleration for animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Optimize repaints */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
