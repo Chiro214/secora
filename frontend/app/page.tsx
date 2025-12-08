@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Shield, Zap, Lock, ChevronRight, Check, Sparkles, Brain, Target } from 'lucide-react';
@@ -19,8 +19,12 @@ export default function LandingPage() {
   const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.3], [1, 0.8]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
@@ -61,12 +65,12 @@ export default function LandingPage() {
         {/* Volumetric Light Beams */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
-            className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-primary/30 to-transparent"
+            className="absolute top-0 left-1/4 w-px h-full bg-linear-to-b from-transparent via-primary/30 to-transparent"
             animate={{ opacity: [0.3, 0.6, 0.3] }}
             transition={{ duration: 3, repeat: Infinity }}
           />
           <motion.div
-            className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-secondary/30 to-transparent"
+            className="absolute top-0 right-1/3 w-px h-full bg-linear-to-b from-transparent via-secondary/30 to-transparent"
             animate={{ opacity: [0.6, 0.3, 0.6] }}
             transition={{ duration: 4, repeat: Infinity }}
           />
@@ -80,7 +84,7 @@ export default function LandingPage() {
           >
             {/* Status Badge with Pulse */}
             <motion.div
-              className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-gradient-to-r from-primary/10 to-secondary/10 px-4 py-2 text-sm text-primary mb-8 backdrop-blur-xl shadow-[0_0_30px_rgba(75,163,255,0.2)]"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-linear-to-r from-primary/10 to-secondary/10 px-4 py-2 text-sm text-primary mb-8 backdrop-blur-xl shadow-[0_0_30px_rgba(75,163,255,0.2)]"
               animate={{ boxShadow: ['0_0_30px_rgba(75,163,255,0.2)', '0_0_50px_rgba(75,163,255,0.4)', '0_0_30px_rgba(75,163,255,0.2)'] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
@@ -124,7 +128,7 @@ export default function LandingPage() {
                 With AI Precision
                 {/* Shimmer overlay */}
                 <motion.span
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                  className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent"
                   animate={{ x: ['-200%', '200%'] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                   style={{ mixBlendMode: 'overlay' }}
@@ -344,7 +348,7 @@ export default function LandingPage() {
             >
               Simple, Transparent Pricing
               <motion.div
-                className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+                className="absolute -bottom-2 left-0 right-0 h-1 bg-linear-to-r from-transparent via-primary to-transparent"
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />

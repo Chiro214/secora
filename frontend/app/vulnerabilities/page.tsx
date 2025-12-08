@@ -165,7 +165,7 @@ export default function VulnerabilitiesPage() {
               <h2 className="text-2xl font-bold text-cyan-300 mb-4">Global Threat Map</h2>
               <Globe3D 
                 vulnerabilities={filteredVulns}
-                onSelect={setSelectedVuln}
+                onSelect={(v) => setSelectedVuln(v as unknown as any)}
                 selectedId={selectedVuln?.id}
               />
             </motion.div>
@@ -180,7 +180,7 @@ export default function VulnerabilitiesPage() {
               <h2 className="text-2xl font-bold text-cyan-300 mb-4">Detected Vulnerabilities</h2>
               <VulnerabilityList
                 vulnerabilities={filteredVulns}
-                onSelect={setSelectedVuln}
+                onSelect={(v) => setSelectedVuln(v as unknown as any)}
                 selectedId={selectedVuln?.id}
               />
             </motion.div>
