@@ -10,8 +10,11 @@ import { NeonButton } from '@/components/ui/NeonButton';
 import { CyberGrid } from '@/components/3d/CyberGrid';
 import { Lock, Mail, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function LoginPage() {
     const router = useRouter();
+    const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [error, setError] = useState('');
@@ -24,7 +27,8 @@ export default function LoginPage() {
 
         try {
             // API call to backend
-            const response = await fetch('http://localhost:5000/api/auth/login', {
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -32,13 +36,11 @@ export default function LoginPage() {
 
             if (response.ok) {
                 const data = await response.json();
-                // Store token
-                localStorage.setItem('token', data.token);
-                
+
                 // Show success animation
                 setShowSuccess(true);
                 setTimeout(() => {
-                    router.push('/dashboard');
+                    login(data.token); // Use context login which handles redirect
                 }, 2000);
             } else {
                 const error = await response.json();
@@ -46,12 +48,8 @@ export default function LoginPage() {
                 setIsLoading(false);
             }
         } catch (err) {
-            // Fallback: Allow login without backend for demo
-            console.log('Backend not available, using demo mode');
-            setShowSuccess(true);
-            setTimeout(() => {
-                router.push('/dashboard');
-            }, 2000);
+            setError('Connection failed. Please try again.');
+            setIsLoading(false);
         }
     };
 

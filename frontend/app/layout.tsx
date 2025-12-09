@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LoadingProvider } from "@/contexts/LoadingContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import SplashScreen from "@/components/loading/SplashScreen";
 
 const geistSans = Geist({
@@ -43,8 +44,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950`}
       >
         <LoadingProvider>
-          <SplashScreen />
-          {children}
+          <AuthProvider>
+            <SplashScreen />
+            {children}
+          </AuthProvider>
         </LoadingProvider>
       </body>
     </html>

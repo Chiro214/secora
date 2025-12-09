@@ -10,9 +10,23 @@ import { VulnerabilityFeed } from '@/components/dashboard/VulnerabilityFeed';
 import { SystemHealth } from '@/components/dashboard/SystemHealth';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { CyberGrid } from '@/components/3d/CyberGrid';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [time, setTime] = useState(new Date());
+  const { checkAuth, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!checkAuth()) {
+      return;
+    }
+  }, [checkAuth, router]);
+
+  if (!isAuthenticated && typeof window !== 'undefined' && !localStorage.getItem('token')) {
+    return null; // Or a loading spinner
+  }
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -42,7 +56,7 @@ export default function DashboardPage() {
               </h1>
               <p className="text-cyan-400/70">Real-time threat intelligence & security monitoring</p>
             </div>
-            
+
             {/* System Time */}
             <div className="text-right">
               <div className="text-2xl font-mono text-cyan-400">
@@ -86,15 +100,15 @@ export default function DashboardPage() {
   );
 }
 
-function StatusIndicator({ 
-  icon: Icon, 
-  label, 
-  status, 
-  color 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  status: string; 
+function StatusIndicator({
+  icon: Icon,
+  label,
+  status,
+  color
+}: {
+  icon: React.ElementType;
+  label: string;
+  status: string;
   color: 'cyan' | 'green' | 'red' | 'purple';
 }) {
   const colors = {
