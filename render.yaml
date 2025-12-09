@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: secora-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    envVars:
+      - key: PORT
+        value: 5000
