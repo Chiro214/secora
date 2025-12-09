@@ -116,10 +116,12 @@ export const scanService = {
     getRemediation: async (scanId: string): Promise<Vulnerability[]> => {
         console.log(`[MOCK] Getting remediation for ${scanId}`);
         await new Promise(resolve => setTimeout(resolve, 1500));
-        
+
         // Try to fetch from real backend first
         try {
-            const response = await axios.get(`http://localhost:5000/api/scan/${scanId}`);
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+            const response = await axios.get(`${API_BASE_URL}/api/scan/${scanId}`);
             if (response.data && response.data.vulnerabilities) {
                 // Transform backend format to frontend format
                 return response.data.vulnerabilities.map((v: any) => ({
@@ -137,7 +139,7 @@ export const scanService = {
         } catch (error) {
             console.log('Backend not available, using mock data');
         }
-        
+
         return MOCK_VULNERABILITIES;
     },
 
@@ -171,9 +173,10 @@ export const scanService = {
     },
 
     getReportUrl: (scanId: string) => {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         // In a real app, this returns the backend URL.
         // For mock, we can return a placeholder or handle it in the component.
-        return `http://localhost:5000/api/report/${scanId}/pdf`;
+        return `${API_BASE_URL}/api/report/${scanId}/pdf`;
     },
 
     // Mock method for dashboard history
