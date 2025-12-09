@@ -20,10 +20,13 @@
     "openai": "^4.104.0",
     "puppeteer": "^22.15.0",
     "tough-cookie": "^4.0.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "@prisma/client": "^5.10.0",
+    "helmet": "^7.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "prisma": "^5.10.0"
   }
 }

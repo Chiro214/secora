@@ -1,0 +1,30 @@
+// backend/prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  
+  isEmailVerified   Boolean   @default(false) @map("is_email_verified")
+  verificationToken String?   @map("verification_token") // Hashed
+  
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  
+  lastLoginAt       DateTime? @map("last_login_at")
+  failedLoginCount  Int       @default(0) @map("failed_login_count")
+  lockUntil         DateTime? @map("lock_until")
+  
+  mfaEnabled        Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret         String?   @map("mfa_secret")
+
+  @@map("users")
+}
