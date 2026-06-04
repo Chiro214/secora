@@ -8,13 +8,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model Organization {
+  id                String    @id @default(uuid())
+  name              String
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  users             User[]
+  targets           Target[]
+  scans             Scan[]
+  
+  @@map("organizations")
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
   passwordHash      String    @map("password_hash")
+  role              UserRole  @default(VIEWER)
+  
+  orgId             String?   @map("org_id")
+  organization      Organization? @relation(fields: [orgId], references: [id])
   
   isEmailVerified   Boolean   @default(false) @map("is_email_verified")
-  verificationToken String?   @map("verification_token") // Hashed
+  verificationToken String?   @map("verification_token")
   
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
@@ -26,5 +47,549 @@ model User {
   mfaEnabled        Boolean   @default(false) @map("mfa_enabled")
   mfaSecret         String?   @map("mfa_secret")
 
+  // Relations
+  targets           Target[]
+  scans             Scan[]
+  scheduledScans    ScheduledScan[]
+  auditLogs         AuditLog[]
+  comments          Comment[]
+
   @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  PENTESTER
+  VIEWER
+}
+
+// ============================================
+// TARGETS & ASSETS
+// ============================================
+
+model Target {
+  id                String       @id @default(uuid())
+  name              String
+  type              TargetType
+  value             String       // domain, IP, or URL
+  description       String?
+  
+  // Ownership verification
+  verified          Boolean      @default(false)
+  verificationMethod String?     // dns-txt, file-upload, email
+  verificationToken String?
+  verifiedAt        DateTime?    @map("verified_at")
+  
+  // Scope control
+  allowSubdomains   Boolean      @default(false) @map("allow_subdomains")
+  excludePatterns   String[]     @default([]) @map("exclude_patterns")
+  subdomains        String[]     @default([])
+  
+  userId            String       @map("user_id")
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  orgId             String?      @map("org_id")
+  organization      Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  
+  // Relations
+  scans             Scan[]
+  scheduledScans    ScheduledScan[]
+  assets            Asset[]
+  macros            Macro[]
+
+  @@index([userId])
+  @@index([type])
+  @@map("targets")
+}
+
+enum TargetType {
+  DOMAIN
+  IP
+  URL
+  CIDR
+}
+
+model Asset {
+  id                String       @id @default(uuid())
+  targetId          String       @map("target_id")
+  target            Target       @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  
+  type              AssetType
+  value             String       // hostname, IP, URL
+  
+  // Discovery metadata
+  discoveredBy      String?      @map("discovered_by") // port-scan, crawler, etc.
+  firstSeen         DateTime     @default(now()) @map("first_seen")
+  lastSeen          DateTime     @default(now()) @map("last_seen")
+  
+  // Asset details
+  ipAddress         String?      @map("ip_address")
+  ports             Json?        // [{port: 443, service: "https", state: "open"}]
+  services          Json?        // Service fingerprints
+  technologies      String[]     @default([])
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  
+  // Relations
+  endpoints         Endpoint[]
+  findings          Finding[]
+
+  @@index([targetId])
+  @@index([type])
+  @@index([value])
+  @@map("assets")
+}
+
+enum AssetType {
+  HOST
+  IP
+  URL
+  SERVICE
+}
+
+model Endpoint {
+  id                String       @id @default(uuid())
+  assetId           String       @map("asset_id")
+  asset             Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  
+  url               String
+  method            String       @default("GET")
+  statusCode        Int?         @map("status_code")
+  
+  // Discovery metadata
+  discoveredBy      String?      @map("discovered_by")
+  parameters        Json?        // Query params, form inputs
+  headers           Json?
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+  
+  // Relations
+  findings          Finding[]
+
+  @@index([assetId])
+  @@index([url])
+  @@map("endpoints")
+}
+
+// ============================================
+// SCANS & FINDINGS
+// ============================================
+
+model Scan {
+  id                String       @id @default(uuid())
+  targetId          String       @map("target_id")
+  target            Target       @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  
+  userId            String       @map("user_id")
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  orgId             String?      @map("org_id")
+  organization      Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  scheduledScanId   String?      @map("scheduled_scan_id")
+  scheduledScan     ScheduledScan? @relation(fields: [scheduledScanId], references: [id], onDelete: SetNull)
+  
+  profile           ScanProfile
+  status            ScanStatus   @default(QUEUED)
+  
+  // Progress tracking
+  progress          Int          @default(0) // 0-100
+  currentPhase      String?      @map("current_phase")
+  
+  // Timing
+  startedAt         DateTime?    @map("started_at")
+  completedAt       DateTime?    @map("completed_at")
+  duration          Int?         // seconds
+  
+  // Configuration
+  config            Json?        // Scan-specific settings
+  
+  // Statistics
+  stats             Json?        // {assetsFound: 10, endpointsFound: 50, findingsCount: 15}
+  
+  // Error handling
+  error             String?
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  
+  // Relations
+  findings          Finding[]
+  reports           Report[]
+
+  @@index([targetId])
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledScanId])
+  @@index([createdAt])
+  @@map("scans")
+}
+
+enum ScanProfile {
+  QUICK_RECON
+  FULL_VAPT
+  WEB_APP_SCAN
+  COMPLIANCE_SNAPSHOT
+  CUSTOM
+}
+
+enum ScanStatus {
+  QUEUED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Finding {
+  id                String         @id @default(uuid())
+  scanId            String         @map("scan_id")
+  scan              Scan           @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  
+  assetId           String?        @map("asset_id")
+  asset             Asset?         @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  
+  endpointId        String?        @map("endpoint_id")
+  endpoint          Endpoint?      @relation(fields: [endpointId], references: [id], onDelete: SetNull)
+  
+  // Vulnerability details
+  title             String
+  description       String
+  category          VulnCategory
+  severity          Severity
+  cvss              Float?
+  cveId             String?        @map("cve_id")
+  cwe               String?
+  owasp             String?
+  
+  // Evidence
+  evidence          Evidence[]
+  
+  // Remediation
+  remediation       String
+  references        String[]       @default([])
+  
+  // Status
+  status            FindingStatus  @default(OPEN)
+  falsePositive     Boolean        @default(false) @map("false_positive")
+  
+  // Metadata
+  detectedBy        String         @map("detected_by") // engine name
+  confidence        Int            @default(100) // 0-100
+  
+  // Phase 6: Enterprise reporting fields
+  cvssVector        String?        @map("cvss_vector")  // CVSS:3.1/AV:N/AC:L/...
+  businessImpact    String?        @map("business_impact")
+  complianceMappings Json?         @map("compliance_mappings")
+  
+  comments          Comment[]
+  
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  @@index([scanId])
+  @@index([severity])
+  @@index([category])
+  @@index([status])
+  @@map("findings")
+}
+
+enum VulnCategory {
+  INJECTION
+  BROKEN_AUTH
+  SENSITIVE_DATA
+  XXE
+  BROKEN_ACCESS
+  SECURITY_MISCONFIG
+  XSS
+  INSECURE_DESERIALIZATION
+  VULNERABLE_COMPONENTS
+  INSUFFICIENT_LOGGING
+  SSRF
+  OPEN_REDIRECT
+  INFORMATION_DISCLOSURE
+  NETWORK
+  CSRF
+  IDOR
+  FILE_UPLOAD
+  BUSINESS_LOGIC
+  OTHER
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum FindingStatus {
+  NEW
+  OPEN
+  CONFIRMED
+  FIXED
+  REOPENED
+  ACCEPTED_RISK
+  FALSE_POSITIVE
+}
+
+model Evidence {
+  id                String       @id @default(uuid())
+  findingId         String       @map("finding_id")
+  finding           Finding      @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  
+  type              EvidenceType
+  title             String
+  content           String       // Request, response, payload, etc.
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  @@index([findingId])
+  @@map("evidence")
+}
+
+enum EvidenceType {
+  REQUEST
+  RESPONSE
+  PAYLOAD
+  SCREENSHOT
+  LOG
+  CODE_SNIPPET
+  OAST_CALLBACK
+}
+
+// ============================================
+// OAST CALLBACKS (Phase 1)
+// ============================================
+
+model OASTCallback {
+  id          String   @id @default(uuid())
+  scanId      String   @map("scan_id")
+  payloadId   String   @unique @map("payload_id")
+  protocol    String   // "dns" or "http"
+  sourceIp    String   @map("source_ip")
+  requestData Json?    @map("request_data")
+  receivedAt  DateTime @default(now()) @map("received_at")
+  matched     Boolean  @default(false)
+  findingId   String?  @map("finding_id")
+
+  @@index([scanId])
+  @@index([payloadId])
+  @@map("oast_callbacks")
+}
+
+// ============================================
+// CVE DATABASE
+// ============================================
+
+model CVE {
+  id                String       @id @default(uuid())
+  cveId             String       @unique @map("cve_id")
+  
+  // CVE details
+  description       String
+  severity          Severity
+  cvssScore         Float        @map("cvss_score")
+  cvssVector        String?      @map("cvss_vector")
+  
+  // Affected products
+  vendor            String?
+  product           String?
+  versionStart      String?      @map("version_start")
+  versionEnd        String?      @map("version_end")
+  
+  // References
+  references        String[]     @default([])
+  
+  // Metadata
+  publishedDate     DateTime     @map("published_date")
+  lastModified      DateTime     @map("last_modified")
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  @@index([cveId])
+  @@index([product])
+  @@index([severity])
+  @@map("cves")
+}
+
+// ============================================
+// REPORTS
+// ============================================
+
+model Report {
+  id                String       @id @default(uuid())
+  scanId            String       @map("scan_id")
+  scan              Scan         @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  
+  format            ReportFormat
+  status            ReportStatus @default(PENDING)
+  
+  // Report content
+  content           Json?        // Structured report data
+  filePath          String?      @map("file_path")
+  fileSize          Int?         @map("file_size")
+  
+  // Error handling
+  error             String?
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+  completedAt       DateTime?    @map("completed_at")
+
+  @@index([scanId])
+  @@map("reports")
+}
+
+enum ReportFormat {
+  PDF
+  JSON
+  HTML
+  CSV
+}
+
+enum ReportStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+// ============================================
+// AUDIT & LOGGING
+// ============================================
+
+model AuditLog {
+  id                String       @id @default(uuid())
+  userId            String?      @map("user_id")
+  user              User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  action            String
+  resource          String
+  resourceId        String?      @map("resource_id")
+  
+  // Request details
+  ipAddress         String       @map("ip_address")
+  userAgent         String?      @map("user_agent")
+  
+  // Additional context
+  metadata          Json?
+  
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+
+// ============================================
+// SCHEDULED SCANS
+// ============================================
+
+model ScheduledScan {
+  id              String       @id @default(uuid())
+  targetId        String       @map("target_id")
+  target          Target       @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  
+  userId          String       @map("user_id")
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name            String
+  profile         ScanProfile
+  cronExpression  String       @map("cron_expression")
+  enabled         Boolean      @default(true)
+  
+  config          Json?        // Scan configuration
+  
+  lastRunAt       DateTime?    @map("last_run_at")
+  nextRunAt       DateTime?    @map("next_run_at")
+  
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  
+  // Relations
+  scans           Scan[]
+
+  @@index([targetId])
+  @@index([userId])
+  @@index([enabled])
+  @@index([nextRunAt])
+  @@map("scheduled_scans")
+}
+
+// ============================================
+// CUSTOM RULES ENGINE (YAML TEMPLATES)
+// ============================================
+
+model CustomTemplate {
+  id              String         @id @default(uuid())
+  name            String
+  severity        Severity
+  author          String         @default("SECORA")
+  target          TemplateTarget @default(URL)
+  yamlContent     String         @map("yaml_content") @db.Text
+  enabled         Boolean        @default(true)
+  
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([enabled])
+  @@map("custom_templates")
+}
+
+enum TemplateTarget {
+  URL
+  HEADER
+  BODY
+  COOKIE
+}
+
+// ============================================
+// MACRO AUTHENTICATION ENGINE
+// ============================================
+
+model Macro {
+  id              String       @id @default(uuid())
+  targetId        String       @map("target_id")
+  target          Target       @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  
+  name            String
+  steps           Json         // Ordered array of actions (goto, click, type)
+  sessionData     Json?        @map("session_data") // Extracted cookies/tokens
+  
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([targetId])
+  @@map("macros")
+}
+
+// ============================================
+// COLLABORATION (COMMENTS)
+// ============================================
+
+model Comment {
+  id              String       @id @default(uuid())
+  findingId       String       @map("finding_id")
+  finding         Finding      @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  
+  userId          String       @map("user_id")
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  text            String       @db.Text
+  
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([findingId])
+  @@index([userId])
+  @@map("comments")
 }

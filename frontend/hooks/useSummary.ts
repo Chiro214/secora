@@ -67,7 +67,7 @@ interface VulnerabilityInterface {
     description: string;
     severity: string;
     impact?: string;
-    exploit?: any;
+    exploit?: unknown;
     fix?: string;
     cvss?: number;
     domain?: string;

@@ -1,42 +1,56 @@
-FROM node:18-slim
+# Backend Dockerfile
+FROM node:20-alpine AS base
 
-# Install Puppeteer dependencies
-RUN apt-get update && apt-get install -y \
-    chromium \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    xdg-utils \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++ cairo-dev jpeg-dev pango-dev giflib-dev
 
-# Set Puppeteer to use installed Chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+WORKDIR /app
 
-WORKDIR /usr/src/app
-
-# Copy package files and install dependencies
+# Copy package files
 COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies
 RUN npm ci --only=production
 
 # Copy source code
 COPY . .
 
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build Go scanner
+FROM golang:1.21-alpine AS go-builder
+WORKDIR /build
+COPY scan-engine/main.go .
+RUN go build -o scan-engine main.go
+
+# Final stage
+FROM node:20-alpine
+
+RUN apk add --no-cache cairo jpeg pango giflib openjdk17-jre
+
+WORKDIR /app
+
+# Copy from base
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/package*.json ./
+COPY --from=base /app/prisma ./prisma
+COPY --from=base /app/src ./src
+
+# Copy Go scanner
+COPY --from=go-builder /build/scan-engine ./scan-engine/scan-engine
+RUN chmod +x ./scan-engine/scan-engine
+
+# Create scan-results directory
+RUN mkdir -p scan-results
+
 # Expose port
 EXPOSE 5000
 
-# Use production start command
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start application
 CMD ["npm", "start"]

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  oast-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secora-oast
+    restart: unless-stopped
+    ports:
+      - "80:80"      # HTTP Callbacks
+      - "443:443"    # HTTPS Callbacks
+      - "53:53/udp"  # DNS Callbacks
+    environment:
+      - NODE_ENV=production
+      - OAST_MODE=production
+      - OAST_DOMAIN=callback.secora.io
+      - OAST_HTTP_PORT=80
+      - OAST_DNS_PORT=53
+    # Replace standard entrypoint to run just the OAST server, not the full backend
+    command: node src/oast/standalone.js

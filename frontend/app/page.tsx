@@ -116,7 +116,7 @@ export default function LandingPage() {
                 Secure Your Web
               </motion.span>
               <motion.span 
-                className="block bg-gradient-to-r from-primary via-blue-400 to-secondary bg-clip-text text-transparent relative"
+                className="block bg-linear-to-r from-primary via-blue-400 to-secondary bg-clip-text text-transparent relative"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(75,163,255,0.5))',
                 }}

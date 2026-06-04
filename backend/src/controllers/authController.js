@@ -34,12 +34,20 @@ export const signup = async (req, res) => {
         const passwordHash = await bcrypt.hash(password, 12);
         const verificationToken = uuidv4(); // Store hashed in real app
 
+        // Create an organization for the new user
+        const orgName = `${name || email.split('@')[0]}'s Organization`;
+
         const user = await prisma.user.create({
             data: {
                 email,
                 passwordHash,
                 verificationToken,
-                // name is not in our schema yet, ignore or add to schema
+                role: 'ADMIN',
+                organization: {
+                    create: {
+                        name: orgName
+                    }
+                }
             }
         });
 
@@ -113,7 +121,7 @@ export const login = async (req, res) => {
 
         // Issue Tokens
         const token = jwt.sign(
-            { id: user.id, email: user.email },
+            { id: user.id, email: user.email, role: user.role, orgId: user.orgId },
             JWT_SECRET,
             { expiresIn: ACCESS_TOKEN_EXP }
         );
@@ -123,7 +131,7 @@ export const login = async (req, res) => {
         res.json({
             message: "Login successful",
             token,
-            user: { id: user.id, email: user.email }
+            user: { id: user.id, email: user.email, role: user.role, orgId: user.orgId }
         });
 
     } catch (error) {

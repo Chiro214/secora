@@ -7,15 +7,18 @@ import { motion } from 'framer-motion';
 import { LayoutDashboard, Scan, FileText, Settings, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-    { icon: Scan, label: 'New Scan', href: '/scan' },
-    { icon: FileText, label: 'Reports', href: '/reports' }, // Placeholder
-    { icon: Settings, label: 'Settings', href: '/settings' }, // Placeholder
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['ADMIN', 'PENTESTER', 'VIEWER'] },
+    { icon: Scan, label: 'New Scan', href: '/scan', roles: ['ADMIN', 'PENTESTER'] },
+    { icon: FileText, label: 'Reports', href: '/reports', roles: ['ADMIN', 'PENTESTER', 'VIEWER'] },
+    { icon: Settings, label: 'Settings', href: '/settings', roles: ['ADMIN'] },
 ];
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { user } = useAuth();
 
     return (
         <div className="flex h-screen w-64 flex-col border-r border-primary/10 bg-surface/50 glass-panel">
@@ -25,7 +28,7 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 space-y-2 p-4">
-                {menuItems.map((item) => {
+                {menuItems.filter(item => !user || item.roles.includes(user.role)).map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                     return (
                         <Link key={item.href} href={item.href}>

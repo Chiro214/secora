@@ -1,0 +1,25 @@
+stages:
+  - build
+  - test
+  - deploy
+  - dast
+
+secora_dast_scan:
+  stage: dast
+  image: node:20
+  variables:
+    SECORA_ENDPOINT: "https://api.secora.io/api"
+    FAIL_ON: "HIGH"
+  script:
+    - echo "Downloading SECORA CLI..."
+    - npm install -g axios commander
+    - curl -O https://raw.githubusercontent.com/secora-io/secora/main/backend/secora-cli.js
+    - chmod +x secora-cli.js
+    - echo "Starting DAST Scan on staging environment..."
+    - ./secora-cli.js -u "$CI_ENVIRONMENT_URL" -a "$SECORA_API_KEY" -e "$SECORA_ENDPOINT" --fail-on "$FAIL_ON"
+  only:
+    - master
+  environment:
+    name: staging
+    url: https://staging.example.com
+  allow_failure: false # Will fail the pipeline if vulnerabilities >= FAIL_ON are found

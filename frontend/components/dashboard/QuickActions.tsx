@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 export function QuickActions() {
   const router = useRouter();
 
+  const { user } = useAuth();
+
   const actions = [
     { 
       icon: Scan, 
@@ -16,6 +18,7 @@ export function QuickActions() {
       color: 'cyan',
       gradient: 'from-cyan-500 to-blue-500',
       onClick: () => router.push('/scan/new'),
+      roles: ['ADMIN', 'PENTESTER']
     },
     { 
       icon: Sparkles, 
@@ -24,6 +27,7 @@ export function QuickActions() {
       color: 'purple',
       gradient: 'from-purple-500 to-pink-500',
       onClick: () => router.push('/automation'),
+      roles: ['ADMIN', 'PENTESTER']
     },
     { 
       icon: Globe, 
@@ -32,6 +36,7 @@ export function QuickActions() {
       color: 'green',
       gradient: 'from-green-500 to-emerald-500',
       onClick: () => router.push('/vulnerabilities'),
+      roles: ['ADMIN', 'PENTESTER', 'VIEWER']
     },
     { 
       icon: FileText, 
@@ -40,6 +45,7 @@ export function QuickActions() {
       color: 'blue',
       gradient: 'from-blue-500 to-indigo-500',
       onClick: () => router.push('/reports'),
+      roles: ['ADMIN', 'PENTESTER', 'VIEWER']
     },
     { 
       icon: Bot, 
@@ -48,6 +54,7 @@ export function QuickActions() {
       color: 'magenta',
       gradient: 'from-pink-500 to-rose-500',
       onClick: () => router.push('/automation'),
+      roles: ['ADMIN', 'PENTESTER']
     },
     { 
       icon: Bell, 
@@ -56,8 +63,11 @@ export function QuickActions() {
       color: 'yellow',
       gradient: 'from-yellow-500 to-orange-500',
       onClick: () => router.push('/settings'),
+      roles: ['ADMIN']
     },
   ];
+
+  const visibleActions = actions.filter(a => !a.roles || (user && a.roles.includes(user.role)));
 
   return (
     <div className="mt-8">

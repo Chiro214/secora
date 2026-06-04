@@ -1,10 +1,105 @@
-version: '3'
+version: '3.8'
+
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: secora-postgres
+    environment:
+      POSTGRES_DB: secora
+      POSTGRES_USER: secora
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secora_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secora"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - secora-network
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: secora-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - secora-network
+
+  # Backend API
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: secora-backend
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://secora:${POSTGRES_PASSWORD:-secora_dev_password}@postgres:5432/secora
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      SCAN_CONCURRENCY: ${SCAN_CONCURRENCY:-2}
     ports:
-      - '5000:5000'
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/scan-results:/app/scan-results
+    networks:
+      - secora-network
+    restart: unless-stopped
+
+  # Go Scan Engine
+  scan-engine:
+    build:
+      context: ./backend/scan-engine
+      dockerfile: Dockerfile
+    container_name: secora-scan-engine
+    ports:
+      - "8080:8080"
+    networks:
+      - secora-network
+    restart: unless-stopped
+
+  # Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: secora-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
     ports:
-      - '3000:3000'
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - secora-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  secora-network:
+    driver: bridge

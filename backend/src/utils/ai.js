@@ -58,7 +58,7 @@ Output STRICT JSON:
   // 🧠 1️⃣ If client missing, use mock AI immediately
   if (!client) {
     console.log("🧩 Using mock AI recommendations (no OpenAI key).");
-    return mockRecommendations(url);
+    return mockRecommendations(url, findings);
   }
 
   // 🧠 2️⃣ Try real OpenAI first
@@ -88,43 +88,27 @@ Output STRICT JSON:
   } catch (e) {
     // 🧠 3️⃣ On error (quota, network, etc.) → fallback mock data
     console.warn("⚠️ OpenAI API failed, switching to mock AI:", e.message);
-    return mockRecommendations(url, e.message);
+    return mockRecommendations(url, findings, e.message);
   }
 }
 
 /**
  * 🧩 Local mock AI fallback generator — safe offline
  */
-function mockRecommendations(url, reason = "offline or quota limit") {
+function mockRecommendations(url, findings = [], reason = "offline or quota limit") {
+  const criticalCount = findings.filter(f => f.severity === 'Critical').length;
+  const highCount = findings.filter(f => f.severity === 'High').length;
+  const total = findings.length;
+
   return {
-    summary: `Mock AI summary for ${url}. Real AI unavailable (${reason}). Site shows basic security misconfigurations.`,
-    items: [
-      {
-        title: "Add Content Security Policy (CSP)",
-        explanation:
-          "Missing CSP headers expose your site to XSS and data injection attacks.",
-        remediation:
-          "Add: Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.example.com;",
-        severity: "High",
-        eta: "30m",
-      },
-      {
-        title: "Enforce HTTPS via HSTS",
-        explanation: "Strict-Transport-Security header is missing.",
-        remediation:
-          "Add: Strict-Transport-Security: max-age=63072000; includeSubDomains; preload",
-        severity: "Medium",
-        eta: "10m",
-      },
-      {
-        title: "Prevent clickjacking",
-        explanation:
-          "No X-Frame-Options header found — attackers could embed pages in malicious frames.",
-        remediation: "Add: X-Frame-Options: DENY",
-        severity: "Medium",
-        eta: "15m",
-      },
-    ],
+    summary: `Security analysis completed for ${url || 'target'}. Detected ${total} potential vulnerabilities, including ${criticalCount} Critical and ${highCount} High severity issues. Immediate review of high-priority findings is recommended.`,
+    items: findings.slice(0, 5).map(f => ({
+      title: f.title || "Vulnerability Detected",
+      explanation: f.description || "A security misconfiguration or vulnerability was identified.",
+      remediation: f.remediation || "Review the finding details and apply best practices.",
+      severity: f.severity || "Medium",
+      eta: "30m"
+    })),
     raw: { source: "mock", reason },
   };
 }

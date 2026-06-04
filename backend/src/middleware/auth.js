@@ -19,3 +19,19 @@ export const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+export const requireRole = (roles) => {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({ message: "Forbidden: Insufficient privileges" });
+        }
+        next();
+    };
+};
+
+export const requireOrg = (req, res, next) => {
+    if (!req.user || !req.user.orgId) {
+        return res.status(403).json({ message: "Forbidden: User does not belong to an organization" });
+    }
+    next();
+};

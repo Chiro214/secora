@@ -7,4 +7,6 @@ dist/
 .vscode/
 *.log
 frontend/.env
-backend/.env
+backend/.envreports/
+scan-results/
+test-modsec/
