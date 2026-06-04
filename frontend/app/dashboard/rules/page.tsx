@@ -6,6 +6,7 @@ import Editor from "@monaco-editor/react";
 import { Play, Save, Plus, Trash2, CheckCircle2, XCircle } from "lucide-react";
 
 export default function RulesEnginePage() {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   const [templates, setTemplates] = useState<any[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<any | null>(null);
   const [yamlContent, setYamlContent] = useState("");
@@ -21,7 +22,7 @@ export default function RulesEnginePage() {
 
   const fetchTemplates = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/templates");
+      const res = await fetch(`${API_BASE_URL}/api/templates`);
       const data = await res.json();
       setTemplates(data);
       if (data.length > 0 && !activeTemplate) {
@@ -46,8 +47,8 @@ export default function RulesEnginePage() {
     try {
       const isNew = !activeTemplate.id;
       const url = isNew 
-        ? "http://localhost:5000/api/templates" 
-        : \`http://localhost:5000/api/templates/\${activeTemplate.id}\`;
+        ? `${API_BASE_URL}/api/templates` 
+        : `${API_BASE_URL}/api/templates/${activeTemplate.id}`;
       
       const res = await fetch(url, {
         method: isNew ? "POST" : "PUT",
@@ -77,7 +78,7 @@ export default function RulesEnginePage() {
     if (!activeTemplate || !activeTemplate.id) return;
     if (!confirm("Are you sure you want to delete this template?")) return;
     try {
-      await fetch(\`http://localhost:5000/api/templates/\${activeTemplate.id}\`, {
+      await fetch(`${API_BASE_URL}/api/templates/${activeTemplate.id}`, {
         method: "DELETE"
       });
       setActiveTemplate(null);
@@ -116,7 +117,7 @@ matchers:
     setTestResult(null);
     try {
       // We will create a test route in the backend
-      const res = await fetch("http://localhost:5000/api/templates/test", {
+      const res = await fetch(`${API_BASE_URL}/api/templates/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
