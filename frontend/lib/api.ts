@@ -84,49 +84,59 @@ export const scanService = {
      * Start a real vulnerability scan against the backend
      */
     startScan: async (url: string): Promise<ScanResult> => {
-        console.log(`🔍 Starting REAL scan for ${url}`);
+        console.log(`🔍 Starting Aggressive Pipeline scan for ${url}`);
 
         try {
-            // Call the real backend scanning endpoint
-            const response = await axios.post(`${API_BASE_URL}/scan`, { url }, {
-                timeout: 120000, // 2 minute timeout for comprehensive scans
-                headers: {
-                    'Content-Type': 'application/json'
+            let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            
+            // 1. Get Guest Token if unauthenticated
+            if (!token) {
+                console.log("No auth token found, creating guest session...");
+                const guestRes = await axios.post(`${API_BASE_URL}/api/auth/guest`);
+                token = guestRes.data.token;
+                if (typeof window !== 'undefined' && token) {
+                    localStorage.setItem('token', token);
                 }
-            });
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+
+            // 2. Create Target
+            console.log("Creating target...");
+            const targetRes = await axios.post(`${API_BASE_URL}/api/targets`, {
+                name: url.replace(/^https?:\/\//, ''),
+                value: url,
+                type: 'URL'
+            }, { headers });
+
+            // 3. Start Pipeline Scan
+            console.log("Starting aggressive pipeline scan...");
+            const response = await axios.post(`${API_BASE_URL}/api/scans/start`, {
+                targetId: targetRes.data.id,
+                profile: 'FULL_VAPT'
+            }, { headers });
 
             const data = response.data;
 
             // Transform backend response to frontend format
             const result: ScanResult = {
-                scanId: data.scanId || `scan-${Date.now()}`,
-                status: 'completed',
-                url: data.target || url,
-                timestamp: data.generatedAt || new Date().toISOString(),
-                vulnerabilities: (data.vulnerabilities || []).map((v: any) => ({
-                    id: v.id,
-                    name: v.title || v.name || 'Unknown Vulnerability',
-                    title: v.title,
-                    severity: normalizeSeverity(v.severity),
-                    owasp: v.owasp,
-                    description: v.description,
-                    impact: v.impact || getDefaultImpact(v.severity),
-                    remediation: v.remediation,
-                    fix: v.remediation,
-                    exploit: v.exploit
-                })),
-                headers: data.headers,
-                tls: data.tls,
-                ai: data.ai
+                scanId: data.id,
+                status: 'pending',
+                url: url,
+                timestamp: data.createdAt || new Date().toISOString(),
+                vulnerabilities: [],
             };
 
             // Cache the result
             scanCache[result.scanId] = result;
 
-            console.log(`✅ Scan completed: ${result.vulnerabilities?.length || 0} vulnerabilities found`);
+            console.log(`✅ Scan enqueued with ID: ${result.scanId}`);
             return result;
         } catch (error: any) {
-            console.error('❌ Scan failed:', error.message);
+            console.error('❌ Scan failed:', error.response?.data || error.message);
             throw new Error(error.response?.data?.error || error.message || 'Scan failed');
         }
     },
@@ -138,23 +148,26 @@ export const scanService = {
         console.log(`📋 Getting remediation for scan ${scanId}`);
 
         // Check cache first
-        if (scanCache[scanId]?.vulnerabilities) {
+        if (scanCache[scanId]?.vulnerabilities && scanCache[scanId]?.status === 'completed') {
             return scanCache[scanId].vulnerabilities!;
         }
 
         try {
+            let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
             // Try to fetch from backend
-            const response = await axios.get(`${API_BASE_URL}/api/scan/${scanId}`);
-            if (response.data?.vulnerabilities) {
-                return response.data.vulnerabilities.map((v: any) => ({
+            const response = await axios.get(`${API_BASE_URL}/api/scans/${scanId}/findings`, { headers });
+            if (response.data?.findings) {
+                return response.data.findings.map((v: any) => ({
                     id: v.id,
-                    name: v.title || v.name,
+                    name: v.title || v.name || v.type,
                     severity: normalizeSeverity(v.severity),
                     description: v.description,
                     impact: v.impact || getDefaultImpact(v.severity),
                     remediation: v.remediation,
                     fix: v.remediation,
-                    exploit: v.exploit
+                    exploit: v.evidence ? { examplePayload: v.evidence.payload } : undefined
                 }));
             }
         } catch (error) {
@@ -172,56 +185,64 @@ export const scanService = {
 
         const cached = scanCache[scanId];
 
-        if (cached) {
-            const vulns = cached.vulnerabilities || [];
-            const stats = {
-                critical: vulns.filter(v => v.severity === 'Critical').length,
-                high: vulns.filter(v => v.severity === 'High').length,
-                medium: vulns.filter(v => v.severity === 'Medium').length,
-                low: vulns.filter(v => v.severity === 'Low').length
-            };
-
-            const riskScore = calculateRiskScore(stats);
-            const executiveSummary = generateExecutiveSummary(cached.url, vulns, stats, cached.ai);
-
-            return {
-                scanId,
-                url: cached.url,
-                riskScore,
-                vulnerabilities: vulns,
-                summary: cached.ai?.summary || `Scan completed with ${vulns.length} vulnerabilities found.`,
-                executiveSummary,
-                scanDuration: '~30s',
-                stats,
-                headers: cached.headers,
-                ai: cached.ai
-            };
-        }
-
         // Try fetching from backend
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/scan/${scanId}`);
-            const data = response.data;
-            const vulns = data.vulnerabilities || [];
-            const stats = {
-                critical: vulns.filter((v: any) => v.severity === 'Critical').length,
-                high: vulns.filter((v: any) => v.severity === 'High').length,
-                medium: vulns.filter((v: any) => v.severity === 'Medium').length,
-                low: vulns.filter((v: any) => v.severity === 'Low').length
-            };
+            let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
+            // Get status
+            const statusRes = await axios.get(`${API_BASE_URL}/api/scans/${scanId}/status`, { headers });
+            const statusData = statusRes.data;
+            
+            if (statusData.status === 'COMPLETED') {
+                // Get full findings
+                const findingsRes = await axios.get(`${API_BASE_URL}/api/scans/${scanId}/findings`, { headers });
+                const vulns = findingsRes.data.findings || [];
+                const stats = {
+                    critical: vulns.filter((v: any) => v.severity === 'CRITICAL').length,
+                    high: vulns.filter((v: any) => v.severity === 'HIGH').length,
+                    medium: vulns.filter((v: any) => v.severity === 'MEDIUM').length,
+                    low: vulns.filter((v: any) => v.severity === 'LOW').length
+                };
 
-            return {
-                scanId,
-                url: data.target || 'Unknown',
-                riskScore: calculateRiskScore(stats),
-                vulnerabilities: vulns,
-                summary: data.ai?.summary || 'Scan completed.',
-                executiveSummary: generateExecutiveSummary(data.target, vulns, stats, data.ai),
-                scanDuration: '~30s',
-                stats
-            };
+                return {
+                    scanId,
+                    url: cached?.url || 'Unknown',
+                    riskScore: calculateRiskScore(stats),
+                    vulnerabilities: vulns,
+                    summary: `Scan completed successfully. Found ${vulns.length} vulnerabilities.`,
+                    executiveSummary: generateExecutiveSummary(cached?.url || 'Unknown', vulns, stats),
+                    scanDuration: statusData.duration || 'N/A',
+                    stats
+                };
+            } else if (statusData.status === 'FAILED' || statusData.status === 'CANCELLED') {
+                 return {
+                    scanId,
+                    url: cached?.url || 'Unknown',
+                    riskScore: 0,
+                    vulnerabilities: [],
+                    summary: `Scan ${statusData.status.toLowerCase()}. ${statusData.error || ''}`,
+                    executiveSummary: 'Scan did not complete successfully.',
+                    scanDuration: 'N/A',
+                    stats: { critical: 0, high: 0, medium: 0, low: 0 }
+                 };
+            } else {
+                // Still running
+                return {
+                    scanId,
+                    url: cached?.url || 'Unknown',
+                    riskScore: 0,
+                    vulnerabilities: [],
+                    summary: `Scan in progress... Phase: ${statusData.currentPhase || 'Initializing'} (${statusData.progress || 0}%)`,
+                    executiveSummary: 'Scan is currently running. Please wait.',
+                    scanDuration: 'In progress',
+                    stats: { critical: 0, high: 0, medium: 0, low: 0 },
+                    // Injecting status flag so UI knows it's pending
+                    ai: { summary: 'pending' } as any
+                };
+            }
         } catch (error) {
-            // Return empty summary
+            // Fallback
             return {
                 scanId,
                 url: 'Unknown',
@@ -242,13 +263,16 @@ export const scanService = {
         console.log(`📥 Downloading PDF for ${scanId}`);
 
         try {
+            let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
             const response = await axios.get(`${API_BASE_URL}/api/report/${encodeURIComponent(scanId)}/pdf`, {
+                headers,
                 responseType: 'blob'
             });
             return response.data;
         } catch (error: any) {
             console.error("❌ PDF generation failed in browser:", error.message || error);
-            // Don't fallback to text because the browser will save it as a corrupt .pdf file!
             throw error;
         }
     },

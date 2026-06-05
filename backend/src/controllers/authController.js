@@ -144,3 +144,56 @@ export const me = async (req, res) => {
     // req.user is set by authMiddleware
     res.json(req.user);
 };
+
+export const guestLogin = async (req, res) => {
+    try {
+        // Find or create a guest organization
+        let guestOrg = await prisma.organization.findFirst({
+            where: { name: 'Guest Users' }
+        });
+
+        if (!guestOrg) {
+            guestOrg = await prisma.organization.create({
+                data: { name: 'Guest Users' }
+            });
+        }
+
+        const guestId = uuidv4();
+        const guestEmail = `guest-${guestId}@secora.local`;
+        
+        // Generate a random password hash for the guest
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(uuidv4(), salt);
+
+        const guestUser = await prisma.user.create({
+            data: {
+                email: guestEmail,
+                passwordHash,
+                role: 'VIEWER',
+                isEmailVerified: true,
+                orgId: guestOrg.id
+            }
+        });
+
+        const token = jwt.sign(
+            { id: guestUser.id, role: guestUser.role, orgId: guestUser.orgId },
+            process.env.JWT_SECRET || 'secora_fallback_secret',
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            message: "Guest session created successfully",
+            token,
+            user: {
+                id: guestUser.id,
+                email: guestUser.email,
+                role: guestUser.role,
+                orgId: guestUser.orgId
+            }
+        });
+
+    } catch (error) {
+        console.error("Guest Login Error:", error);
+        res.status(500).json({ message: "Server error", details: error.message });
+    }
+};

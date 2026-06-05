@@ -9,6 +9,7 @@ const router = express.Router();
 // Public Routes
 router.post("/api/auth/signup", rateLimiter, authController.signup);
 router.post("/api/auth/login", rateLimiter, authController.login);
+router.post("/api/auth/guest", rateLimiter, authController.guestLogin);
 
 // Protected Routes
 router.get("/api/auth/me", authenticateToken, authController.me);
