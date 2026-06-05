@@ -28,23 +28,4 @@ services:
           name: secora-redis
           property: connectionString
       - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: secora-frontend
-          property: url
-
-  - type: web
-    name: secora-frontend
-    env: node
-    rootDir: frontend
-    plan: free
-    buildCommand: "npm ci && npm run build"
-    startCommand: "npm start"
-    envVars:
-      - key: RENDER
-        value: "true"
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: secora-backend
-          property: url
+        value: "https://secora-seven.vercel.app"
