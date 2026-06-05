@@ -2,7 +2,7 @@
 FROM node:20-alpine AS base
 
 # Install dependencies for native modules
-RUN apk add --no-cache python3 make g++ cairo-dev jpeg-dev pango-dev giflib-dev
+RUN apk add --no-cache python3 make g++ cairo-dev jpeg-dev pango-dev giflib-dev openssl
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN go build -o scan-engine main.go
 # Final stage
 FROM node:20-alpine
 
-RUN apk add --no-cache cairo jpeg pango giflib openjdk17-jre
+RUN apk add --no-cache cairo jpeg pango giflib openjdk17-jre openssl
 
 WORKDIR /app
 
