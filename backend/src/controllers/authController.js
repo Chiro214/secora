@@ -178,7 +178,7 @@ export const guestLogin = async (req, res) => {
         const token = jwt.sign(
             { id: guestUser.id, role: guestUser.role, orgId: guestUser.orgId },
             process.env.JWT_SECRET || 'change-me-in-prod',
-            { expiresIn: '24h' }
+            { expiresIn: '7d' }
         );
 
         res.json({

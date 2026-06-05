@@ -87,37 +87,78 @@ export const scanService = {
         console.log(`🔍 Starting Aggressive Pipeline scan for ${url}`);
 
         try {
-            let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-            
-            // 1. Get Guest Token if unauthenticated
-            if (!token) {
-                console.log("No auth token found, creating guest session...");
-                const guestRes = await axios.post(`${API_BASE_URL}/api/auth/guest`);
-                token = guestRes.data.token;
-                if (typeof window !== 'undefined' && token) {
-                    localStorage.setItem('token', token);
-                }
+            // Always fetch a fresh guest token at scan initiation instead of relying on localStorage
+            console.log("Fetching fresh guest session...");
+            const guestRes = await axios.post(`${API_BASE_URL}/api/auth/guest`);
+            let token = guestRes.data.token;
+            if (typeof window !== 'undefined' && token) {
+                localStorage.setItem('token', token);
             }
 
-            const headers = {
+            let headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             };
 
-            // 2. Create Target
-            console.log("Creating target...");
-            const targetRes = await axios.post(`${API_BASE_URL}/api/targets`, {
-                name: url.replace(/^https?:\/\//, ''),
-                value: url,
-                type: 'URL'
-            }, { headers });
+            let targetRes;
+            try {
+                // 2. Create Target
+                console.log("Creating target...");
+                targetRes = await axios.post(`${API_BASE_URL}/api/targets`, {
+                    name: url.replace(/^https?:\/\//, ''),
+                    value: url,
+                    type: 'URL'
+                }, { headers });
+            } catch (initialError: any) {
+                if (initialError.response?.status === 401 || initialError.response?.status === 403) {
+                    console.log("Token rejected, attempting one fresh retry...");
+                    const retryGuestRes = await axios.post(`${API_BASE_URL}/api/auth/guest`);
+                    token = retryGuestRes.data.token;
+                    if (typeof window !== 'undefined' && token) {
+                        localStorage.setItem('token', token);
+                    }
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    };
+                    targetRes = await axios.post(`${API_BASE_URL}/api/targets`, {
+                        name: url.replace(/^https?:\/\//, ''),
+                        value: url,
+                        type: 'URL'
+                    }, { headers });
+                } else {
+                    throw initialError;
+                }
+            }
 
             // 3. Start Pipeline Scan
             console.log("Starting aggressive pipeline scan...");
-            const response = await axios.post(`${API_BASE_URL}/api/scans/start`, {
-                targetId: targetRes.data.id,
-                profile: 'FULL_VAPT'
-            }, { headers });
+            let response;
+            try {
+                response = await axios.post(`${API_BASE_URL}/api/scans/start`, {
+                    targetId: targetRes.data.id,
+                    profile: 'FULL_VAPT'
+                }, { headers });
+            } catch (initialError: any) {
+                if (initialError.response?.status === 401 || initialError.response?.status === 403) {
+                    console.log("Token rejected during scan start, attempting one fresh retry...");
+                    const retryGuestRes = await axios.post(`${API_BASE_URL}/api/auth/guest`);
+                    token = retryGuestRes.data.token;
+                    if (typeof window !== 'undefined' && token) {
+                        localStorage.setItem('token', token);
+                    }
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    };
+                    response = await axios.post(`${API_BASE_URL}/api/scans/start`, {
+                        targetId: targetRes.data.id,
+                        profile: 'FULL_VAPT'
+                    }, { headers });
+                } else {
+                    throw initialError;
+                }
+            }
 
             const data = response.data;
 
@@ -141,7 +182,7 @@ export const scanService = {
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem('token');
                 }
-                throw new Error('Authentication expired. Please try again.');
+                throw new Error('Authentication expired despite retry. Please try again.');
             }
             throw new Error(error.response?.data?.error || error.message || 'Scan failed');
         }
