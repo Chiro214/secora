@@ -60,7 +60,7 @@ export const signup = async (req, res) => {
 
     } catch (error) {
         console.error("Signup Error:", error);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server error", details: error.message });
     }
 };
 
@@ -136,7 +136,7 @@ export const login = async (req, res) => {
 
     } catch (error) {
         console.error("Login Error:", error);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server error", details: error.message });
     }
 };
 

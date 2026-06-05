@@ -28,7 +28,9 @@ RUN go build -o scan-engine main.go
 # Final stage
 FROM node:20-alpine
 
-RUN apk add --no-cache cairo jpeg pango giflib openjdk17-jre openssl
+RUN apk add --no-cache cairo jpeg pango giflib openjdk17-jre openssl chromium nss freetype harfbuzz ca-certificates ttf-freefont
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 

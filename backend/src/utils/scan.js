@@ -159,6 +159,7 @@ async function testAuthBypass(baseUrl) {
   try {
     browser = await puppeteer.launch({
       headless: 'new',
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
 
@@ -496,6 +497,7 @@ function runHeaderChecks(headers) {
 async function puppeteerFetch(url, timeout = 20000) {
   const browser = await puppeteer.launch({
     headless: "new", // 'new' when available, else true
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -674,6 +676,28 @@ export async function scanTarget(rawUrl) {
     fetchResult = await retryWithBackoff(fetcher, { retries: 2, baseDelay: 600 });
   } catch (err) {
     throw new Error("Target is unreachable or blocked.");
+  }
+
+  // Execute aggressive scans (Phase 4 integration)
+  try {
+    const exposedFindings = await checkExposedPaths(url.toString());
+    vulnerabilities.push(...exposedFindings);
+  } catch (e) {
+    console.warn("Exposed paths check failed:", e.message);
+  }
+
+  try {
+    const authFindings = await testAuthBypass(url.toString());
+    vulnerabilities.push(...authFindings);
+  } catch (e) {
+    console.warn("Auth bypass check failed:", e.message);
+  }
+
+  try {
+    const infoFindings = await checkInformationDisclosure(fetchResult.html, headers);
+    vulnerabilities.push(...infoFindings);
+  } catch (e) {
+    console.warn("Info disclosure check failed:", e.message);
   }
 
   // header checks
