@@ -137,6 +137,12 @@ export const scanService = {
             return result;
         } catch (error: any) {
             console.error('❌ Scan failed:', error.response?.data || error.message);
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('token');
+                }
+                throw new Error('Authentication expired. Please try again.');
+            }
             throw new Error(error.response?.data?.error || error.message || 'Scan failed');
         }
     },
