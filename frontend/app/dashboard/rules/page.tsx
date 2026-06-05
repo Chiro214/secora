@@ -93,7 +93,7 @@ export default function RulesEnginePage() {
       name: "New Custom Rule",
       severity: "MEDIUM",
       target: "URL",
-      yamlContent: \`id: new-rule
+      yamlContent: `id: new-rule
 info:
   name: New Custom Rule
   author: SECORA
@@ -105,7 +105,7 @@ matchers:
     status: [200]
   - type: word
     words:
-      - "success"\`
+      - "success"`
     };
     setTemplates([newTemplate, ...templates]);
     selectTemplate(newTemplate);
@@ -155,20 +155,20 @@ matchers:
             <button
               key={t.id || idx}
               onClick={() => selectTemplate(t)}
-              className={\`w-full text-left p-3 rounded-lg text-sm transition-all \${
+              className={`w-full text-left p-3 rounded-lg text-sm transition-all ${
                 activeTemplate?.id === t.id 
                   ? 'bg-indigo-900/30 border border-indigo-500/50 text-indigo-300' 
                   : 'hover:bg-[#1a1a1a] border border-transparent text-gray-400'
-              }\`}
+              }`}
             >
               <div className="flex justify-between items-center mb-1">
                 <span className="font-medium text-gray-200 truncate pr-2">{t.name}</span>
-                <span className={\`text-xs px-2 py-0.5 rounded-full border \${
+                <span className={`text-xs px-2 py-0.5 rounded-full border ${
                   t.severity === 'CRITICAL' ? 'bg-red-900/30 border-red-500/50 text-red-400' :
                   t.severity === 'HIGH' ? 'bg-orange-900/30 border-orange-500/50 text-orange-400' :
                   t.severity === 'MEDIUM' ? 'bg-yellow-900/30 border-yellow-500/50 text-yellow-400' :
                   'bg-blue-900/30 border-blue-500/50 text-blue-400'
-                }\`}>
+                }`}>
                   {t.severity}
                 </span>
               </div>
@@ -223,7 +223,7 @@ matchers:
 
             {/* Test Result Display */}
             {testResult && (
-              <div className={\`p-4 border-b border-[#1a1a1a] \${testResult.findings?.length > 0 ? 'bg-red-900/10' : 'bg-green-900/10'}\`}>
+              <div className={`p-4 border-b border-[#1a1a1a] ${testResult.findings?.length > 0 ? 'bg-red-900/10' : 'bg-green-900/10'}`}>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                   {testResult.findings?.length > 0 ? <XCircle size={16} className="text-red-400"/> : <CheckCircle2 size={16} className="text-green-400"/>}
                   Test Results

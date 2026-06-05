@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 export function QuickActions() {
   const router = useRouter();
 
-  const { user } = useAuth();
+
 
   const actions = [
     { 
@@ -67,7 +67,7 @@ export function QuickActions() {
     },
   ];
 
-  const visibleActions = actions.filter(a => !a.roles || (user && a.roles.includes(user.role)));
+
 
   return (
     <div className="mt-8">

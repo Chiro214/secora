@@ -18,7 +18,7 @@ const menuItems = [
 
 export function Sidebar() {
     const pathname = usePathname();
-    const { user } = useAuth();
+
 
     return (
         <div className="flex h-screen w-64 flex-col border-r border-primary/10 bg-surface/50 glass-panel">
@@ -28,7 +28,7 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 space-y-2 p-4">
-                {menuItems.filter(item => !user || item.roles.includes(user.role)).map((item) => {
+                {menuItems.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                     return (
                         <Link key={item.href} href={item.href}>

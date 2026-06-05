@@ -20,7 +20,7 @@ export function CommentsSection({ findingId }: { findingId: string }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newText, setNewText] = useState('');
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     fetchComments();
@@ -118,7 +118,7 @@ export function CommentsSection({ findingId }: { findingId: string }) {
         </div>
       )}
 
-      {user && (
+      {isAuthenticated && (
         <form onSubmit={handleSubmit} className="relative">
           <textarea
             value={newText}

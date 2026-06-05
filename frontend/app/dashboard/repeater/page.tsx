@@ -163,7 +163,7 @@ export default function RepeaterPage() {
                         <span className="font-semibold text-gray-300 flex items-center gap-2"><Layout size={16} className="text-blue-400"/> Response</span>
                         {response && (
                             <div className="flex items-center gap-4 text-xs">
-                                <span className={\`px-2 py-1 rounded \${response.status < 300 ? 'bg-green-900/50 text-green-400' : response.status < 400 ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'}\`}>
+                                <span className={`px-2 py-1 rounded ${response.status < 300 ? 'bg-green-900/50 text-green-400' : response.status < 400 ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'}`}>
                                     {response.status} {response.statusText}
                                 </span>
                                 <span className="text-gray-400 flex items-center gap-1"><Clock size={12}/> {response.latencyMs} ms</span>
@@ -177,7 +177,7 @@ export default function RepeaterPage() {
                             <button 
                                 key={tab}
                                 onClick={() => setActiveTab(tab as any)}
-                                className={\`px-4 py-2 text-sm font-medium capitalize \${activeTab === tab ? 'text-cyan-400 border-b-2 border-cyan-400 bg-gray-800/50' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30'}\`}
+                                className={`px-4 py-2 text-sm font-medium capitalize ${activeTab === tab ? 'text-cyan-400 border-b-2 border-cyan-400 bg-gray-800/50' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30'}`}
                             >
                                 {tab}
                             </button>

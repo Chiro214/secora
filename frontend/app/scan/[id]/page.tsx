@@ -102,7 +102,7 @@ export default function ScanDetailsPage({ params }: { params: Promise<{ id: stri
                         <div id="remediation-section" className="space-y-4">
                             <h2 className="text-2xl font-bold text-white">Vulnerabilities & Remediation</h2>
                             {remediation && remediation.length > 0 ? (
-                                remediation.map((vuln) => (
+                                remediation.map((vuln: any) => (
                                     <Card key={vuln.id} className="border-primary/10 bg-surface/50 overflow-hidden">
                                         <div className={`h-1 w-full ${vuln.severity === 'High' ? 'bg-red-500' :
                                             vuln.severity === 'Medium' ? 'bg-yellow-500' : 'bg-blue-500'
