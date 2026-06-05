@@ -26,7 +26,7 @@ export default function RepeaterPage() {
         setError('');
         
         try {
-            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://secora.onrender.com';
             const res = await fetch(`${API_BASE_URL}/api/repeater/send`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

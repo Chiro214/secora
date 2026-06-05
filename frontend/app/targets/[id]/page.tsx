@@ -6,7 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Globe, ShieldAlert, Activity, LayoutList } from 'lucide-react';
 import { CyberGrid } from '@/components/3d/CyberGrid';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://secora.onrender.com';
 
 export default function TargetDetailsPage() {
     const params = useParams();

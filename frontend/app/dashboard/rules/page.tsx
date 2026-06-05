@@ -6,7 +6,7 @@ import Editor from "@monaco-editor/react";
 import { Play, Save, Plus, Trash2, CheckCircle2, XCircle } from "lucide-react";
 
 export default function RulesEnginePage() {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://secora.onrender.com";
   const [templates, setTemplates] = useState<any[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<any | null>(null);
   const [yamlContent, setYamlContent] = useState("");

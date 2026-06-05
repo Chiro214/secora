@@ -32,7 +32,7 @@ export default function TargetsPage() {
 
     const fetchTargets = async () => {
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://secora.onrender.com';
             const response = await fetch(`${API_URL}/api/targets`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -54,7 +54,7 @@ export default function TargetsPage() {
         if (!confirm('Are you sure you want to delete this target?')) return;
 
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://secora.onrender.com';
             const response = await fetch(`${API_URL}/api/targets/${id}`, {
                 method: 'DELETE',
                 headers: {

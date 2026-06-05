@@ -71,7 +71,7 @@ export default function RepeaterPage() {
             // Add to history
             setHistory(prev => [{ timestamp: new Date(), req: parsed, rawReq: rawRequest }, ...prev].slice(0, 10));
 
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/repeater/send`, parsed);
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'https://secora.onrender.com'}/api/repeater/send`, parsed);
             
             setResponse(res.data);
         } catch (err: any) {

@@ -42,7 +42,7 @@ export default function ScansPage() {
 
     const fetchScans = async () => {
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://secora.onrender.com';
             const url = filter === 'all' 
                 ? `${API_URL}/api/scans`
                 : `${API_URL}/api/scans?status=${filter}`;
