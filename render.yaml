@@ -14,7 +14,7 @@ services:
     env: docker
     rootDir: backend
     plan: free
-    dockerCommand: "npx prisma migrate deploy && npm start"
+    dockerCommand: "npx prisma db push && node src/scripts/seedTemplates.js && npm start"
     envVars:
       - key: RENDER
         value: "true"
