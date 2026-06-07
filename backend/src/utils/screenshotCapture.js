@@ -16,7 +16,14 @@ export async function getSharedBrowser() {
   }
   _sharedBrowser = await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+    args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox', 
+        '--disable-dev-shm-usage', 
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote'
+    ],
   });
   return _sharedBrowser;
 }

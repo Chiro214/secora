@@ -22,10 +22,106 @@ export async function jsCrawlerEngine({ target, type, config }) {
         respectRobots: config.respectRobots !== false
     });
 
-    const results = await crawler.crawl();
+    let results = await crawler.crawl();
 
-    console.log(`✅ JS crawler completed: ${results.urls.length} URLs, ${results.apiEndpoints.length} API endpoints discovered`);
+    // Fallback to HTTP Crawler if Puppeteer fails (e.g., due to memory limits)
+    if (results.urls.length === 0) {
+        console.warn(`⚠️ JS crawler found 0 URLs. Falling back to HTTP crawler for ${target}...`);
+        try {
+            const fallbackResults = await httpCrawlerEngine(crawler.startUrl, crawler.maxDepth, crawler.maxUrls);
+            results = { ...results, ...fallbackResults };
+            console.log(`✅ HTTP fallback crawler completed: ${results.urls.length} URLs discovered`);
+        } catch (err) {
+             console.error(`❌ HTTP fallback crawler failed: ${err.message}`);
+        }
+    } else {
+        console.log(`✅ JS crawler completed: ${results.urls.length} URLs, ${results.apiEndpoints.length} API endpoints discovered`);
+    }
 
+    return results;
+}
+
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+
+async function httpCrawlerEngine(startUrl, maxDepth, maxUrls) {
+    const visited = new Set();
+    const queue = [{ url: startUrl, depth: 0 }];
+    const results = { urls: [], forms: [], apiEndpoints: [] };
+    const baseUrl = new URL(startUrl);
+
+    while (queue.length > 0 && visited.size < maxUrls) {
+        const { url, depth } = queue.shift();
+
+        if (visited.has(url) || depth > maxDepth) continue;
+        visited.add(url);
+
+        try {
+            const response = await axios.get(url, {
+                timeout: 10000,
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SecoraBot/1.0' },
+                validateStatus: () => true 
+            });
+
+            const contentType = response.headers['content-type'] || '';
+            
+            results.urls.push({
+                url,
+                method: 'GET',
+                statusCode: response.status,
+                contentType,
+                depth,
+                discoveredBy: 'http-crawler'
+            });
+
+            if (contentType.includes('text/html')) {
+                const $ = cheerio.load(response.data);
+
+                // Extract Links
+                $('a[href]').each((_, el) => {
+                    let href = $(el).attr('href');
+                    if (!href) return;
+                    try {
+                        let absoluteUrl = new URL(href, startUrl).href;
+                        absoluteUrl = absoluteUrl.split('#')[0]; // Remove fragments
+                        if (new URL(absoluteUrl).origin === baseUrl.origin && !visited.has(absoluteUrl)) {
+                            queue.push({ url: absoluteUrl, depth: depth + 1 });
+                        }
+                    } catch (e) { /* Ignore invalid URLs */ }
+                });
+
+                // Extract Forms
+                $('form').each((_, form) => {
+                     const action = $(form).attr('action') || url;
+                     const method = ($(form).attr('method') || 'GET').toUpperCase();
+                     let formUrl = action;
+                     try {
+                         formUrl = new URL(action, startUrl).href;
+                     } catch(e) {}
+                     
+                     const inputs = [];
+                     $(form).find('input, textarea, select').each((_, input) => {
+                         inputs.push({
+                             name: $(input).attr('name') || $(input).attr('id'),
+                             type: $(input).attr('type') || 'text',
+                             required: $(input).prop('required')
+                         });
+                     });
+
+                     results.forms.push({
+                         action: formUrl,
+                         method,
+                         inputs,
+                         pageUrl: url,
+                         enctype: $(form).attr('enctype') || 'application/x-www-form-urlencoded'
+                     });
+                });
+            }
+        } catch (err) {
+            console.warn(`  ⚠️ HTTP Crawl error for ${url}: ${err.message}`);
+        }
+    }
+    
     return results;
 }
 
