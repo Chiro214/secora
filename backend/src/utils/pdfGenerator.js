@@ -50,7 +50,8 @@ export async function generatePDF(htmlContent, options = {}) {
         
         // Set content
         await page.setContent(htmlContent, {
-            waitUntil: 'networkidle0'
+            waitUntil: 'load',
+            timeout: 60000
         });
 
         // Generate PDF

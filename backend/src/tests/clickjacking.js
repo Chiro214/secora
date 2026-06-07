@@ -5,7 +5,7 @@ import path from 'path';
 
 export async function testClickjacking(endpoint, options = {}) {
     const findings = [];
-    const timeout = options.timeout || 15000;
+    const timeout = options.timeout || 60000;
     
     // Clickjacking is primarily tested on GET requests serving HTML
     if (endpoint.method !== 'GET') return findings;

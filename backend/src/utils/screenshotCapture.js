@@ -62,7 +62,7 @@ export async function captureUrl(url, findingId, label = 'Exposed Resource') {
   try {
     await page.setViewport(VIEWPORT);
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.evaluate((html) => {
       const div = document.createElement('div');
       div.innerHTML = html;
@@ -143,7 +143,7 @@ export async function captureResponseComparison(baselineData, bypassData, findin
       </div>
     </body></html>`;
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
     const screenshot = await page.screenshot({ encoding: 'base64', fullPage: false });
     return { base64: screenshot, timestamp: ts, findingId, label: 'Auth Bypass Comparison' };
   } catch (err) {
@@ -199,7 +199,7 @@ export async function captureHeaders(url, responseHeaders, missingHeaders, findi
       </div>
     </body></html>`;
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
     const screenshot = await page.screenshot({ encoding: 'base64', fullPage: false });
     return { base64: screenshot, timestamp: ts, findingId, label: 'Missing Security Headers' };
   } catch (err) {
@@ -258,7 +258,7 @@ export async function captureRedirect(originalUrl, redirectLocation, statusCode,
       </div>
     </body></html>`;
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
     const screenshot = await page.screenshot({ encoding: 'base64', fullPage: false });
     return { base64: screenshot, timestamp: ts, findingId, label: 'Open Redirect' };
   } catch (err) {
@@ -321,7 +321,7 @@ export async function captureTlsInfo(tlsData, findingId, targetHost) {
       </div>
     </body></html>`;
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'load', timeout: 60000 });
     const screenshot = await page.screenshot({ encoding: 'base64', fullPage: false });
     return { base64: screenshot, timestamp: ts, findingId, label: 'TLS Configuration' };
   } catch (err) {

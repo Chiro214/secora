@@ -96,6 +96,25 @@ router.get("/api/scans/:id/status", authenticateToken, async (req, res) => {
             return res.status(404).json({ error: "Scan not found" });
         }
         
+        // Failsafe: if scan is RUNNING but hasn't been updated in 15 minutes, mark as FAILED
+        if (scan.status === 'RUNNING' && scan.startedAt) {
+            const timeSinceStart = new Date().getTime() - new Date(scan.startedAt).getTime();
+            if (timeSinceStart > 15 * 60 * 1000) {
+                console.log(`⚠️ Marking stalled ghost scan ${scan.id} as FAILED`);
+                await prisma.scan.update({
+                    where: { id: scan.id },
+                    data: {
+                        status: 'FAILED',
+                        error: 'Scan aborted: server restarted or worker crashed unexpectedly.',
+                        completedAt: new Date()
+                    }
+                });
+                scan.status = 'FAILED';
+                scan.error = 'Scan aborted: server restarted or worker crashed unexpectedly.';
+                scan.completedAt = new Date();
+            }
+        }
+        
         res.json(scan);
     } catch (error) {
         console.error("Get scan status error:", error);
