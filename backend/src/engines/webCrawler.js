@@ -1,6 +1,6 @@
 // backend/src/engines/webCrawler.js
 import axios from 'axios';
-import { JSDOM } from 'jsdom';
+import * as cheerio from 'cheerio';
 import { URL } from 'url';
 
 /**
@@ -114,11 +114,10 @@ class WebCrawler {
             }
             
             // Parse HTML
-            const dom = new JSDOM(response.data);
-            const document = dom.window.document;
+            const $ = cheerio.load(response.data);
             
             // Extract links
-            const links = this.extractLinks(document, url);
+            const links = this.extractLinks($, url);
             for (const link of links) {
                 if (!this.visited.has(link) && this.isSameOrigin(link)) {
                     this.queue.push({ url: link, depth: depth + 1 });
@@ -126,11 +125,11 @@ class WebCrawler {
             }
             
             // Extract forms
-            const forms = this.extractForms(document, url);
+            const forms = this.extractForms($, url);
             this.results.forms.push(...forms);
             
             // Extract API endpoints
-            const endpoints = this.extractEndpoints(document, response.data, url);
+            const endpoints = this.extractEndpoints($, response.data, url);
             this.results.endpoints.push(...endpoints);
             
         } catch (error) {
@@ -139,13 +138,12 @@ class WebCrawler {
         }
     }
     
-    extractLinks(document, baseUrl) {
+    extractLinks($, baseUrl) {
         const links = new Set();
-        const anchors = document.querySelectorAll('a[href]');
         
-        for (const anchor of anchors) {
+        $('a[href]').each((_, anchor) => {
             try {
-                const href = anchor.getAttribute('href');
+                const href = $(anchor).attr('href');
                 const absoluteUrl = new URL(href, baseUrl).href;
                 
                 // Filter out non-HTTP(S) links
@@ -157,29 +155,29 @@ class WebCrawler {
             } catch (err) {
                 // Invalid URL, skip
             }
-        }
+        });
         
         return Array.from(links);
     }
     
-    extractForms(document, pageUrl) {
+    extractForms($, pageUrl) {
         const forms = [];
-        const formElements = document.querySelectorAll('form');
         
-        for (const form of formElements) {
-            const action = form.getAttribute('action') || pageUrl;
-            const method = (form.getAttribute('method') || 'GET').toUpperCase();
+        $('form').each((_, form) => {
+            const $form = $(form);
+            const action = $form.attr('action') || pageUrl;
+            const method = ($form.attr('method') || 'GET').toUpperCase();
             
             const inputs = [];
-            const inputElements = form.querySelectorAll('input, textarea, select');
             
-            for (const input of inputElements) {
+            $form.find('input, textarea, select').each((_, input) => {
+                const $input = $(input);
                 inputs.push({
-                    name: input.getAttribute('name'),
-                    type: input.getAttribute('type') || 'text',
-                    required: input.hasAttribute('required')
+                    name: $input.attr('name'),
+                    type: $input.attr('type') || 'text',
+                    required: $input.attr('required') !== undefined
                 });
-            }
+            });
             
             try {
                 const absoluteAction = new URL(action, pageUrl).href;
@@ -193,19 +191,17 @@ class WebCrawler {
             } catch (err) {
                 // Invalid action URL
             }
-        }
+        });
         
         return forms;
     }
     
-    extractEndpoints(document, html, pageUrl) {
+    extractEndpoints($, html, pageUrl) {
         const endpoints = [];
         
         // Look for API endpoints in JavaScript
-        const scriptTags = document.querySelectorAll('script');
-        
-        for (const script of scriptTags) {
-            const content = script.textContent;
+        $('script').each((_, script) => {
+            const content = $(script).html() || '';
             
             // Find fetch/axios calls
             const apiPatterns = [
@@ -230,7 +226,7 @@ class WebCrawler {
                     }
                 }
             }
-        }
+        });
         
         // Look for common endpoints
         const commonEndpoints = [
