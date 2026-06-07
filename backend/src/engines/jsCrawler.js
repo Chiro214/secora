@@ -17,7 +17,7 @@ export async function jsCrawlerEngine({ target, type, config }) {
         startUrl: normalizeTarget(target, type),
         maxDepth: config.maxDepth || 3,
         maxUrls: config.maxUrls || 500,
-        timeout: config.timeout || 15000,
+        timeout: config.timeout || 30000,
         auth: config.auth || null, // { type: 'cookie'|'jwt', credentials: {...} }
         respectRobots: config.respectRobots !== false
     });
@@ -58,7 +58,7 @@ async function httpCrawlerEngine(startUrl, maxDepth, maxUrls) {
 
         try {
             const response = await axios.get(url, {
-                timeout: 10000,
+                timeout: 30000,
                 headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SecoraBot/1.0' },
                 validateStatus: () => true 
             });
