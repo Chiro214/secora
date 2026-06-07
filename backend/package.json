@@ -8,7 +8,7 @@
     "start": "node src/server.js"
   },
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "^5.14.0",
     "axios": "^1.17.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.0",
@@ -33,7 +33,7 @@
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
     "openai": "^4.104.0",
-    "prisma": "^7.8.0",
+    "prisma": "^5.14.0",
     "puppeteer": "^22.15.0",
     "socket.io": "^4.8.3",
     "tough-cookie": "^4.0.0",
