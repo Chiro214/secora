@@ -67,7 +67,7 @@ router.post("/api/scans/start", authenticateToken, async (req, res) => {
         res.status(201).json(scan);
     } catch (error) {
         console.error("Start scan error:", error);
-        res.status(500).json({ error: "Failed to start scan" });
+        res.status(500).json({ error: `Failed to start scan: ${error.message}` });
     }
 });
 

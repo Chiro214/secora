@@ -34,7 +34,7 @@ router.post("/api/targets", authenticateToken, async (req, res) => {
         res.status(201).json(target);
     } catch (error) {
         console.error("Create target error:", error);
-        res.status(500).json({ error: "Failed to create target" });
+        res.status(500).json({ error: `Failed to create target: ${error.message}` });
     }
 });
 
