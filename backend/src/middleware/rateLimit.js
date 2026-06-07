@@ -2,7 +2,7 @@
 import redis from "../config/redis.js";
 
 const WINDOW_SIZE_IN_SECONDS = 60 * 10; // 10 minutes
-const MAX_WINDOW_REQUEST_COUNT = 5;
+const MAX_WINDOW_REQUEST_COUNT = 100;
 const WINDOW_LOG_INTERVAL_IN_SECONDS = 60;
 
 /**
